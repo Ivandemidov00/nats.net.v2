@@ -12,7 +12,7 @@ fully supporting all NATS features.
 It integrates seamlessly with modern .NET asynchronous interfaces such as
 async enumerables and channels, and leverages advanced .NET memory, buffer and IO features. (supports server v2.11)
 
-### Check out [DOCS](https://nats-io.github.io/nats.net/) for guides and examples.
+### Check out [DOCS](https://nats-io.github.io/nats.net/) Ёor guides and examples.
 
 **Additionally check out [NATS by example](https://natsbyexample.com) - An evolving collection of runnable, cross-client reference examples for NATS.**
 

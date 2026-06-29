@@ -62,6 +62,11 @@ public interface INatsJSContext
         ConsumerConfig config,
         CancellationToken cancellationToken = default);
 
+    ValueTask<INatsJSPushConsumer> CreatePushConsumerAsync(
+        string stream,
+        PushConsumerOptions config,
+        CancellationToken cancellationToken = default);
+
     /// <summary>
     /// Update consumer exists consumer
     /// </summary>

@@ -32,7 +32,8 @@ public partial class NatsJSContext : INatsJSContext
         CancellationToken cancellationToken = default)
     {
         ThrowIfInvalidStreamName(stream);
-        return await CreateOrUpdateConsumerInternalAsync(stream, config, default, cancellationToken);
+        var consumerInfo = await CreateOrUpdateConsumerInternalAsync(stream, config, default, cancellationToken);
+        return PullConsumerFactory(this, consumerInfo);
     }
 
     public async ValueTask<INatsJSConsumer> CreateConsumerAsync(
@@ -41,7 +42,19 @@ public partial class NatsJSContext : INatsJSContext
         CancellationToken cancellationToken = default)
     {
         ThrowIfInvalidStreamName(stream);
-        return await CreateOrUpdateConsumerInternalAsync(stream, config, ConsumerCreateAction.Create, cancellationToken);
+        var consumerInfo = await CreateOrUpdateConsumerInternalAsync(stream, config, default, cancellationToken);
+        return PullConsumerFactory(this, consumerInfo);    }
+
+    public async ValueTask<INatsJSPushConsumer> CreatePushConsumerAsync(string stream, PushConsumerOptions config, CancellationToken cancellationToken = default)
+    {
+        ThrowIfInvalidStreamName(stream);
+
+        var info = await CreateOrUpdateConsumerInternalAsync(
+            stream,
+            config,
+            ConsumerCreateAction.Create,
+            cancellationToken);
+        return PushConsumerFactory(this, info, config);
     }
 
     public async ValueTask<INatsJSConsumer> UpdateConsumerAsync(
@@ -50,8 +63,8 @@ public partial class NatsJSContext : INatsJSContext
         CancellationToken cancellationToken = default)
     {
         ThrowIfInvalidStreamName(stream);
-        return await CreateOrUpdateConsumerInternalAsync(stream, config, ConsumerCreateAction.Update, cancellationToken);
-    }
+        var consumerInfo = await CreateOrUpdateConsumerInternalAsync(stream, config, default, cancellationToken);
+        return PullConsumerFactory(this, consumerInfo);    }
 
     /// <summary>
     /// Gets consumer information from the server and creates a NATS JetStream consumer <see cref="NatsJSConsumer"/>.
@@ -237,7 +250,11 @@ public partial class NatsJSContext : INatsJSContext
             cancellationToken);
     }
 
-    private async ValueTask<NatsJSConsumer> CreateOrUpdateConsumerInternalAsync(
+    private static NatsJsPushConsumer PushConsumerFactory(NatsJSContext context, ConsumerInfo info, PushConsumerOptions options) => new(context, info, options);
+
+    private static NatsJSConsumer PullConsumerFactory(NatsJSContext context, ConsumerInfo info) => new(context, info);
+
+    private async ValueTask<ConsumerInfo> CreateOrUpdateConsumerInternalAsync(
         string stream,
         ConsumerConfig config,
         ConsumerCreateAction action,
@@ -274,7 +291,7 @@ public partial class NatsJSContext : INatsJSContext
             throw new NatsJSException("Cannot create consumers with priority policy other than 'overflow', 'pinned_client', or 'none'.");
         }
 
-        var response = await JSRequestResponseAsync<ConsumerCreateRequest, ConsumerInfo>(
+        return await JSRequestResponseAsync<ConsumerCreateRequest, ConsumerInfo>(
             subject: subject,
             new ConsumerCreateRequest
             {
@@ -283,7 +300,5 @@ public partial class NatsJSContext : INatsJSContext
                 Action = action,
             },
             cancellationToken);
-
-        return new NatsJSConsumer(this, response);
     }
 }
